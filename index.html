@@ -1,0 +1,120 @@
+import React, { useState, useEffect } from 'react';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { AlertCircle, CheckCircle } from 'lucide-react';
+
+const generateQuestion = () => {
+  const questions = [
+    {
+      type: 'parameterConversion',
+      question: (value) => `OpenAI社の新しいGPT-5モデルは${value}Bのパラメータ数だと発表されました。これを億単位に変換してください。`,
+      answer: (value) => value * 100,
+      generate: () => Math.floor(Math.random() * 900) + 100
+    },
+    {
+      type: 'investmentConversion',
+      question: (value) => `自動運転技術のスタートアップであるAurora Innovation社が$${value}Mの追加資金調達を発表しました。これを日本円に換算してください。(1ドル=150円)`,
+      answer: (value) => value * 150 * 1000000,
+      generate: () => Math.floor(Math.random() * 500) + 100
+    },
+    {
+      type: 'valuationCalculation',
+      question: (value, percentage) => `クラウドセキュリティ企業のCrowdStrike社は時価総額$${value}Bと報告されています。この企業の${percentage}%の株式を取得するにはいくらの投資が必要ですか？(単位: $B)`,
+      answer: (value, percentage) => (value * percentage) / 100,
+      generate: () => ({value: Math.floor(Math.random() * 50) + 10, percentage: Math.floor(Math.random() * 20) + 1})
+    },
+    {
+      type: 'marketShareCalculation',
+      question: (total, share) => `世界のクラウドコンピューティング市場は年間$${total}Bの規模だと推定されています。Amazon Web Services (AWS)の市場シェアが${share}%だとすると、AWSの年間売上はいくらになりますか？(単位: $B)`,
+      answer: (total, share) => (total * share) / 100,
+      generate: () => ({total: Math.floor(Math.random() * 500) + 100, share: Math.floor(Math.random() * 40) + 10})
+    }
+  ];
+
+  const selectedQuestion = questions[Math.floor(Math.random() * questions.length)];
+  const values = selectedQuestion.generate();
+
+  return {
+    question: typeof values === 'object' 
+      ? selectedQuestion.question(values.value, values.percentage || values.share)
+      : selectedQuestion.question(values),
+    answer: typeof values === 'object'
+      ? selectedQuestion.answer(values.value, values.percentage || values.share)
+      : selectedQuestion.answer(values),
+    type: selectedQuestion.type
+  };
+};
+
+const BigNumberCalculationGame = () => {
+  const [currentQuestion, setCurrentQuestion] = useState(null);
+  const [userAnswer, setUserAnswer] = useState('');
+  const [result, setResult] = useState(null);
+  const [score, setScore] = useState(0);
+
+  useEffect(() => {
+    generateNewQuestion();
+  }, []);
+
+  const generateNewQuestion = () => {
+    setCurrentQuestion(generateQuestion());
+    setUserAnswer('');
+    setResult(null);
+  };
+
+  const handleSubmit = () => {
+    const userAnswerNum = parseFloat(userAnswer.replace(/,/g, ''));
+    const isCorrect = Math.abs(userAnswerNum - currentQuestion.answer) / currentQuestion.answer < 0.01;
+
+    setResult(isCorrect);
+    if (isCorrect) {
+      setScore(score + 1);
+    }
+  };
+
+  const formatNumber = (num) => {
+    return num.toLocaleString('ja-JP');
+  };
+
+  return (
+    <div className="flex flex-col items-center justify-center min-h-screen bg-gray-100 p-4">
+      <Card className="w-full max-w-md">
+        <CardHeader>
+          <CardTitle>テック業界の大きな数字暗算ゲーム</CardTitle>
+        </CardHeader>
+        <CardContent>
+          {currentQuestion && (
+            <div className="space-y-4">
+              <p className="text-lg font-semibold">{currentQuestion.question}</p>
+              <Input
+                type="text"
+                value={userAnswer}
+                onChange={(e) => setUserAnswer(e.target.value)}
+                placeholder="答えを入力してください"
+                className="w-full"
+              />
+              <Button onClick={handleSubmit} className="w-full">
+                回答する
+              </Button>
+              {result !== null && (
+                <div className={`flex items-center ${result ? 'text-green-500' : 'text-red-500'}`}>
+                  {result ? <CheckCircle className="mr-2" /> : <AlertCircle className="mr-2" />}
+                  <span>{result ? '正解です！' : '不正解です。'}</span>
+                </div>
+              )}
+              {result !== null && (
+                <p>正解: {formatNumber(Math.round(currentQuestion.answer * 100) / 100)}</p>
+              )}
+              <Button onClick={generateNewQuestion} className="w-full">
+                次の問題
+              </Button>
+              <p className="text-center">スコア: {score}</p>
+            </div>
+          )}
+        </CardContent>
+      </Card>
+    </div>
+  );
+};
+
+export default BigNumberCalculationGame;
