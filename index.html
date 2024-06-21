@@ -8,6 +8,7 @@
     <script src="https://unpkg.com/react-dom@17/umd/react-dom.development.js"></script>
     <script src="https://unpkg.com/babel-standalone@6/babel.min.js"></script>
     <style>
+        /* 前回と同じCSSスタイル */
         body {
             font-family: Arial, sans-serif;
             display: flex;
@@ -82,26 +83,30 @@
                 {
                     type: 'parameterConversion',
                     question: (value) => `OpenAI社の新しいGPT-5モデルは${value}Bのパラメータ数だと発表されました。これを億単位に変換してください。`,
-                    answer: (value) => value * 100,
-                    generate: () => Math.floor(Math.random() * 900) + 100
+                    answer: (value) => value * 10, // 修正：100から10に変更
+                    generate: () => Math.floor(Math.random() * 900) + 100,
+                    formatAnswer: (value) => `${value.toLocaleString()}億`
                 },
                 {
                     type: 'investmentConversion',
                     question: (value) => `自動運転技術のスタートアップであるAurora Innovation社が$${value}Mの追加資金調達を発表しました。これを日本円に換算してください。(1ドル=150円)`,
                     answer: (value) => value * 150 * 1000000,
-                    generate: () => Math.floor(Math.random() * 500) + 100
+                    generate: () => Math.floor(Math.random() * 500) + 100,
+                    formatAnswer: (value) => `${value.toLocaleString()}円`
                 },
                 {
                     type: 'valuationCalculation',
                     question: (value, percentage) => `クラウドセキュリティ企業のCrowdStrike社は時価総額$${value}Bと報告されています。この企業の${percentage}%の株式を取得するにはいくらの投資が必要ですか？(単位: $B)`,
                     answer: (value, percentage) => (value * percentage) / 100,
-                    generate: () => ({value: Math.floor(Math.random() * 50) + 10, percentage: Math.floor(Math.random() * 20) + 1})
+                    generate: () => ({value: Math.floor(Math.random() * 50) + 10, percentage: Math.floor(Math.random() * 20) + 1}),
+                    formatAnswer: (value) => `$${value.toFixed(2)}B`
                 },
                 {
                     type: 'marketShareCalculation',
                     question: (total, share) => `世界のクラウドコンピューティング市場は年間$${total}Bの規模だと推定されています。Amazon Web Services (AWS)の市場シェアが${share}%だとすると、AWSの年間売上はいくらになりますか？(単位: $B)`,
                     answer: (total, share) => (total * share) / 100,
-                    generate: () => ({total: Math.floor(Math.random() * 500) + 100, share: Math.floor(Math.random() * 40) + 10})
+                    generate: () => ({total: Math.floor(Math.random() * 500) + 100, share: Math.floor(Math.random() * 40) + 10}),
+                    formatAnswer: (value) => `$${value.toFixed(2)}B`
                 }
             ];
 
@@ -115,7 +120,8 @@
                 answer: typeof values === 'object'
                     ? selectedQuestion.answer(values.value, values.percentage || values.share)
                     : selectedQuestion.answer(values),
-                type: selectedQuestion.type
+                type: selectedQuestion.type,
+                formatAnswer: selectedQuestion.formatAnswer
             };
         };
 
@@ -145,10 +151,6 @@
                 }
             };
 
-            const formatNumber = (num) => {
-                return num.toLocaleString('ja-JP');
-            };
-
             return (
                 <div className="card">
                     <h1 className="card-title">テック業界の大きな数字暗算ゲーム</h1>
@@ -170,7 +172,7 @@
                                 </div>
                             )}
                             {result !== null && (
-                                <p>正解: {formatNumber(Math.round(currentQuestion.answer * 100) / 100)}</p>
+                                <p>正解: {currentQuestion.formatAnswer(currentQuestion.answer)}</p>
                             )}
                             <button onClick={generateNewQuestion}>
                                 次の問題
